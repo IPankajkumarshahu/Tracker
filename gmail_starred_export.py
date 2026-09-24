@@ -4,7 +4,8 @@
 Columns: Date | Time | Subject | Link | Reg No
 
 Reg No is the vehicle registration number(s) found in the subject line
-(blank if none; several are comma-separated).
+(several are comma-separated). If there is none, the claim number is used
+instead and the cell is highlighted yellow; blank if neither is found.
 
 Usage:
     python gmail_starred_export.py                       # -> starred_mails.xlsx
@@ -21,10 +22,11 @@ from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill
 from openpyxl.utils import get_column_letter
 
-from regno import find_reg_numbers
+from regno import reg_or_claim
 
 SCOPES = ["https://www.googleapis.com/auth/gmail.readonly"]
 HEADERS = ["Date", "Time", "Subject", "Link", "Reg No"]
+CLAIM_FILL = PatternFill("solid", fgColor="FFF2CC")  # Reg No cell holds a claim number
 
 
 def gmail_service(credentials_file, token_file):
@@ -87,20 +89,14 @@ def mail_link(email, msg_id, thread_id):
 
 
 def build_rows(messages, tz, email):
+    """Return ``(row, is_claim)`` pairs, newest first."""
     rows = []
     # newest first
     for msg_id, thread_id, internal_ms, subject in sorted(messages, key=lambda m: m[2], reverse=True):
         dt = datetime.fromtimestamp(internal_ms / 1000, tz=timezone.utc).astimezone(tz)
         link = mail_link(email, msg_id, thread_id)
-        rows.append(
-            [
-                dt.strftime("%d-%m-%Y"),
-                dt.strftime("%H:%M:%S"),
-                subject,
-                link,
-                ", ".join(find_reg_numbers(subject)),
-            ]
-        )
+        reg_no, is_claim = reg_or_claim(subject)
+        rows.append(([dt.strftime("%d-%m-%Y"), dt.strftime("%H:%M:%S"), subject, link, reg_no], is_claim))
     return rows
 
 
@@ -113,11 +109,13 @@ def write_excel(rows, path):
         cell.font = Font(bold=True, color="FFFFFF")
         cell.fill = PatternFill("solid", fgColor="4472C4")
 
-    for row in rows:
+    for row, is_claim in rows:
         ws.append(row)
         link_cell = ws.cell(row=ws.max_row, column=4)
         link_cell.hyperlink = row[3]
         link_cell.style = "Hyperlink"
+        if is_claim:
+            ws.cell(row=ws.max_row, column=5).fill = CLAIM_FILL
 
     for i, width in enumerate([12, 10, 70, 55, 20], start=1):
         ws.column_dimensions[get_column_letter(i)].width = width
@@ -138,8 +136,10 @@ def main():
     email = service.users().getProfile(userId="me").execute()["emailAddress"]
     rows = build_rows(fetch_starred(service), ZoneInfo(args.tz), email)
     write_excel(rows, args.output)
-    with_reg = sum(1 for r in rows if r[4])
-    print(f"Saved {len(rows)} starred mails to {args.output} ({with_reg} with a Reg No).")
+    claims = sum(1 for _, is_claim in rows if is_claim)
+    regs = sum(1 for row, is_claim in rows if row[4] and not is_claim)
+    print(f"Saved {len(rows)} starred mails to {args.output} "
+          f"({regs} with a Reg No, {claims} with a claim number instead).")
 
 
 if __name__ == "__main__":

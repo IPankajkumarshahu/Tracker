@@ -1,6 +1,6 @@
 import unittest
 
-from regno import find_reg_numbers
+from regno import find_claim_numbers, find_reg_numbers, reg_or_claim
 
 
 class FindRegNumbersTest(unittest.TestCase):
@@ -28,6 +28,27 @@ class FindRegNumbersTest(unittest.TestCase):
                         "<BOLERO PICK-UP FB PS 1.7 T XL>/<>", "", None]:
             with self.subTest(subject=subject):
                 self.assertEqual(find_reg_numbers(subject), [])
+
+
+class ClaimFallbackTest(unittest.TestCase):
+    def test_claim_numbers(self):
+        cases = {
+            "Request for Wreck offer<CL26217676>/<2383/84906808/00/000>/<M/S SHRI HARJIKA": ["CL26217676"],
+            "Claim no. 10110425750 Regn. No. HR890648 Maruti": ["10110425750"],
+            "DIESEL___WB-75-E-9412__Claim no- CL26246090___2315/81538921/00/000": ["CL26246090"],
+            "WRECK VALUE / C1274101122507 / ASWANI JAISWAL": ["C1274101122507"],
+            "CLAIM NO: 1234/2025/01 salvage": ["1234/2025/01"],
+            "Claim intimation received": [],
+            "Meeting at 10 AM": [],
+        }
+        for subject, expected in cases.items():
+            with self.subTest(subject=subject):
+                self.assertEqual(find_claim_numbers(subject), expected)
+
+    def test_reg_preferred_over_claim(self):
+        self.assertEqual(reg_or_claim("Claim no. 10110402407 Regn. No. KA06MA4060"), ("KA06MA4060", False))
+        self.assertEqual(reg_or_claim("Request for Wreck offer<CL26071371>/<BOLERO PICK-UP>"), ("CL26071371", True))
+        self.assertEqual(reg_or_claim("Weekly report"), ("", False))
 
 
 if __name__ == "__main__":

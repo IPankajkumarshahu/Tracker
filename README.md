@@ -7,25 +7,39 @@ Exports every **starred** Gmail message to Excel with these columns:
 | 24-09-2026 | 13:30:00 | Claim for MH 12 AB 1234 | https://mail.google.com/mail/?authuser=you@example.com#all/... | MH12AB1234 |
 
 **Reg No** is the vehicle registration number found in the subject line, written without spaces
-(`MH 12 AB 1234`, `mh-12-ab-1234` → `MH12AB1234`). It is blank if the subject has none. If there are several, they are separated by commas.
+(`MH 12 AB 1234`, `mh-12-ab-1234` → `MH12AB1234`). If there are several, they are separated by commas.
 Supported formats: the standard state format (`MH12AB1234`, `DL3CAB1234`, `KA05MN123`) and the Bharat series (`22BH1234AA`).
 If the subject labels the number (`Regn. No. HR890648`), it is picked up even without series letters.
-Links use `?authuser=<your email>`, so they open the right account even when several are signed in.
 Only real RTO state codes are accepted, so ordinary words are not picked up by mistake.
+
+**No reg number? → claim number.** If the subject has no reg number, the claim number goes in the Reg No
+column instead, and the cell is **highlighted light yellow** so you can tell it apart
+(e.g. `<CL26217676>`, `Claim no. 10110425750`, `C1274101122507`). The cell stays blank only if neither is found.
+
+Links use `?authuser=<your email>`, so they open the right account even when several are signed in.
 
 There are two ways to run it. Pick one.
 
 ---
 
-## Option A — Google Apps Script (no install, easiest)
+## Option A — One-click Google Sheet (recommended, no install)
 
-1. Open <https://script.google.com> → **New project**.
-2. Delete the sample code and paste in everything from [`apps_script/StarredMailsExport.gs`](apps_script/StarredMailsExport.gs).
-3. Select `exportStarredMails` in the function dropdown → **Run** → approve Gmail/Sheets access.
-4. Open **Execution log**. It shows a link to the new Google Sheet and a direct **.xlsx download** link.
-   (You can also use File → Download → Microsoft Excel.)
+**Set up once (about 2 minutes):**
+1. Go to <https://sheets.new> to create a blank Google Sheet. Name it, for example, *Starred Mails Tracker*.
+2. In the sheet, open **Extensions → Apps Script**.
+3. Delete the sample code, paste in everything from
+   [`apps_script/StarredMailsExport.gs`](apps_script/StarredMailsExport.gs), and click **Save** (💾).
+4. Go back to the sheet and **reload the page**. A new **Starred Mails** menu appears next to *Help*.
+5. The first time you use the menu, Google asks for permission: **Continue → choose your account → Allow**.
+   (The script reads your Gmail and writes to this sheet only.)
 
-Date and time use the script's time zone (Project Settings → Time zone).
+**Every time after that — one click:**
+- **Starred Mails → Export to Excel**: refreshes the sheet with all currently starred mails
+  and downloads it as an `.xlsx` file. (If your browser blocks the automatic download, click the
+  *Download Excel file* link in the pop-up.)
+- **Starred Mails → Refresh sheet only**: updates the sheet without downloading.
+
+Date and time use the spreadsheet's time zone (File → Settings → Time zone).
 
 ## Option B — Python script
 

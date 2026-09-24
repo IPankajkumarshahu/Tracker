@@ -56,3 +56,36 @@ def find_reg_numbers(text):
         if reg not in result:
             result.append(reg)
     return result
+
+
+# Claim numbers, used when a subject has no registration number.
+# Labelled: "Claim no. 10110425750", "Claim no- CL26246090", "CLAIM NO: 1234/2025/01"
+_CLAIM_LABELLED = re.compile(
+    r"CLAIM\s*(?:NO|NUMBER)?[\s.:#\-]*([A-Z]{0,4}\d[A-Z0-9]*(?:/[A-Z0-9]+)*)(?![A-Z0-9])"
+)
+# Unlabelled insurer formats: CL26217676 (Universal Sompo), C1274101122507 (Magma)
+_CLAIM_BARE = re.compile(r"(?<![A-Z0-9])(CL\d{6,}|C\d{10,})(?![A-Z0-9])")
+
+
+def find_claim_numbers(text):
+    """Return unique claim numbers found in ``text``, in order of appearance."""
+    if not text:
+        return []
+    upper = text.upper()
+    found = [(m.start(1), m.group(1)) for m in _CLAIM_LABELLED.finditer(upper)]
+    found += [(m.start(1), m.group(1)) for m in _CLAIM_BARE.finditer(upper)]
+    result = []
+    for _, claim in sorted(found):
+        if claim not in result:
+            result.append(claim)
+    return result
+
+
+def reg_or_claim(text):
+    """Return ``(value, is_claim)``: the reg number(s) in ``text``, or the claim
+    number(s) when there is no reg number. ``value`` is "" if neither is found."""
+    regs = find_reg_numbers(text)
+    if regs:
+        return ", ".join(regs), False
+    claims = find_claim_numbers(text)
+    return ", ".join(claims), bool(claims)
