@@ -71,3 +71,57 @@ The first run opens a browser for Google sign-in (read-only Gmail access). After
 ```bash
 python -m unittest test_regno
 ```
+
+---
+
+# Bank Statement PDF → Excel
+
+Converts bank statement PDFs (HDFC, SBI, ICICI, Axis, Kotak and other banks) into Excel, one row per
+transaction, in the same layout as the statement:
+
+| Date | Value Date | Description / Narration | Chq. / Ref. No. | Debit (Dr) | Credit (Cr) | Balance | Balance Check |
+|------|------------|-------------------------|-----------------|-----------:|------------:|--------:|---------------|
+| 01-04-2024 | 01-04-2024 | NEFT CR-SBIN0001234-ACME TECHNOLOGIES PVT LTD-SALARY | 0000532238943119 | | 1,59,179.27 | 2,44,179.27 | OK |
+
+- **Works with any bank layout.** It finds the table header by its wording (Date / Txn Date, Narration /
+  Particulars / Description, Withdrawal / Debit, Deposit / Credit, Amount + Dr/Cr, Balance ...), so there are
+  no per-bank templates to maintain. Narrations that wrap over several lines are joined back into one row.
+- **Every row is checked against the running balance** (previous balance − Dr + Cr = balance).
+  Rows that don't agree are marked *Mismatch* and highlighted red, so you know exactly which lines to
+  compare with the PDF. Statements listed newest-first are put back in date order.
+- **Opening balance row, totals row** (Dr and Cr are `SUM` formulas) and a **Summary sheet** with bank,
+  account number, period, opening / closing balance and the number of rows to review.
+- Extra columns the bank prints (e.g. *Sl. No.*, *Init. Br*) are kept as extra Excel columns.
+- Password-protected PDFs are supported (the password the bank's e-mail tells you).
+- Amounts are real numbers in Indian format (1,23,456.00) and dates are real Excel dates, so you can
+  filter, sort and pivot straight away.
+
+Limits: the PDF must be the text PDF from net banking / the bank's e-mail. Scanned or photographed
+statements have no text and need OCR first (the tool tells you when that's the case).
+
+### Set up once
+```bash
+pip install -r requirements.txt
+```
+
+### Option 1 — Web page (upload & download, no commands)
+```bash
+streamlit run bank_statement_app.py
+```
+Your browser opens a page: drop in one or more statement PDFs, type the password if they're locked, click
+**Convert to Excel**, check the preview and totals, then **Download Excel** (one sheet per statement plus a
+Summary sheet). Everything runs on your own computer — client statements are not uploaded anywhere.
+
+### Option 2 — Command line
+```bash
+python bank_statement_to_excel.py statement.pdf                   # -> statement.xlsx
+python bank_statement_to_excel.py client_statements/              # every PDF in the folder, one .xlsx each
+python bank_statement_to_excel.py hdfc.pdf sbi.pdf -o client.xlsx # all in one workbook
+python bank_statement_to_excel.py locked.pdf -p PASSWORD          # password-protected PDF
+```
+
+### Tests
+```bash
+pip install reportlab   # used to draw sample statements
+python -m unittest test_bank_statement
+```
