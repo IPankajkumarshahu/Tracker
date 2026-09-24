@@ -17,12 +17,15 @@ var STATE_CODES = ['AN', 'AP', 'AR', 'AS', 'BR', 'CG', 'CH', 'DD', 'DL', 'DN', '
   'UK', 'UA', 'UP', 'WB'];
 
 var SEP = '[\\s\\-./]*';
-var STANDARD_RE = new RegExp('(?<![A-Z0-9])([A-Z]{2})' + SEP + '(\\d{1,2})' + SEP +
+// Written for both Apps Script runtimes (old Rhino has no lookbehind or BigInt),
+// so a boundary is matched as (?:^|[^A-Z0-9]) instead of a lookbehind.
+var START = '(?:^|[^A-Z0-9])';
+var STANDARD_RE = new RegExp(START + '([A-Z]{2})' + SEP + '(\\d{1,2})' + SEP +
   '([A-Z](?:' + SEP + '[A-Z]){0,2})' + SEP + '(\\d{1,4})(?![A-Z0-9])', 'g');
 // Labelled numbers ("Regn. No. HR890648") may lack series letters.
 var LABELLED_RE = new RegExp('(?:REGN?|REGISTRATION|VEH(?:ICLE)?)\\.?\\s*(?:NO|NUMBER)\\.?\\s*[:#\\-]?\\s*' +
   '([A-Z]{2})' + SEP + '(\\d{1,2})' + SEP + '()(\\d{1,4})(?![A-Z0-9])', 'g');
-var BHARAT_RE = new RegExp('(?<![A-Z0-9])(\\d{2})' + SEP + '(BH)' + SEP + '(\\d{4})' + SEP +
+var BHARAT_RE = new RegExp(START + '(\\d{2})' + SEP + '(BH)' + SEP + '(\\d{4})' + SEP +
   '([A-Z]{1,2})(?![A-Z0-9])', 'g');
 
 function pad(s, n) {
@@ -39,14 +42,14 @@ function findRegNumbers(text) {
 
   BHARAT_RE.lastIndex = 0;
   while ((m = BHARAT_RE.exec(upper)) !== null) {
-    found.push({ pos: m.index, reg: m[1] + m[2] + m[3] + m[4] });
+    found.push({ pos: m.index + m[0].indexOf(m[1]), reg: m[1] + m[2] + m[3] + m[4] });
   }
   [STANDARD_RE, LABELLED_RE].forEach(function (re) {
     re.lastIndex = 0;
     while ((m = re.exec(upper)) !== null) {
       if (STATE_CODES.indexOf(m[1]) === -1) continue;
       var series = m[3].replace(/[^A-Z]/g, '');
-      found.push({ pos: m.index, reg: m[1] + pad(m[2], 2) + series + pad(m[4], 4) });
+      found.push({ pos: m.index + m[0].indexOf(m[1]), reg: m[1] + pad(m[2], 2) + series + pad(m[4], 4) });
     }
   });
 
@@ -60,7 +63,7 @@ function findRegNumbers(text) {
 
 // Claim numbers, used when a subject has no registration number.
 var CLAIM_LABELLED_RE = /CLAIM\s*(?:NO|NUMBER)?[\s.:#\-]*([A-Z]{0,4}\d[A-Z0-9]*(?:\/[A-Z0-9]+)*)(?![A-Z0-9])/g;
-var CLAIM_BARE_RE = /(?<![A-Z0-9])(CL\d{6,}|C\d{10,})(?![A-Z0-9])/g;
+var CLAIM_BARE_RE = /(?:^|[^A-Z0-9])(CL\d{6,}|C\d{10,})(?![A-Z0-9])/g;
 
 /** Returns unique claim numbers in `text`, in order of appearance. */
 function findClaimNumbers(text) {
@@ -90,10 +93,28 @@ function regOrClaim(text) {
   return { value: claims.join(', '), isClaim: claims.length > 0 };
 }
 
+/** Converts a hex id (e.g. 1a0d338b33fbc3f4) to its exact decimal string. */
+function hexToDecimal(hex) {
+  var digits = [0]; // base-10 digits, least significant first
+  for (var i = 0; i < hex.length; i++) {
+    var carry = parseInt(hex.charAt(i), 16);
+    for (var j = 0; j < digits.length; j++) {
+      var v = digits[j] * 16 + carry;
+      digits[j] = v % 10;
+      carry = Math.floor(v / 10);
+    }
+    while (carry) {
+      digits.push(carry % 10);
+      carry = Math.floor(carry / 10);
+    }
+  }
+  return digits.reverse().join('');
+}
+
 /** Same link format Gmail uses; authuser opens the right signed-in account. */
 function mailLink(email, msgId, threadId) {
   return 'https://mail.google.com/mail/?authuser=' + email +
-    '#all/thread-f:' + BigInt('0x' + threadId).toString() + '|msg-f:' + BigInt('0x' + msgId).toString();
+    '#all/thread-f:' + hexToDecimal(threadId) + '|msg-f:' + hexToDecimal(msgId);
 }
 
 var SHEET_NAME = 'Starred Mails';
