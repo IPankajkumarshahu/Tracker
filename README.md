@@ -41,6 +41,12 @@ There are two ways to run it. Pick one.
 
 Date and time use the spreadsheet's time zone (File → Settings → Time zone).
 
+**Already created the script at script.google.com instead?** That works too:
+select **exportToExcel** in the dropdown next to *Debug* and click **Run**. The **Execution log**
+shows a *Download Excel* link. The first run creates a spreadsheet named *Starred Mails Tracker* in your
+Drive, and later runs update that same spreadsheet. (The one-click menu only appears when the
+script is added from inside a Google Sheet.)
+
 ## Option B — Python script
 
 ### One-time setup
