@@ -153,8 +153,7 @@ var US_MATRIX_SEED = [
   ['NORMAL', 'West Bengal, Bihar, Jharkhand, Odisha, Orissa, Assam, Arunachal Pradesh, Meghalaya, Manipur, Mizoram, Tripura, Nagaland, Sikkim, Chhattisgarh', 'SBI, MAGMA, FUTURE, GODIGIT, ROYAL, ACKO, SHRIRAM, UNIVERSAL, IFFCO, HDFC', 'Pankaj Kumar', 'East region'],
   ['NORMAL', 'West Bengal, Bihar, Jharkhand, Odisha, Orissa, Assam, Arunachal Pradesh, Meghalaya, Manipur, Mizoram, Tripura, Nagaland, Sikkim, Chhattisgarh', 'ALL', 'Rachna', 'East region, rest all sellers'],
   ['NORMAL', 'Madhya Pradesh', 'ALL', 'Saurabh Pare', 'All private sellers'],
-  ['NORMAL', 'Rajasthan', 'UNIVERSAL, BAJAJ, HDFC, MAGMA, SHRIRAM, KOTAK, RAHEJA, FUTURE, ACKO', 'Shalini Kumari', 'RJ'],
-  ['NORMAL', 'Rajasthan', 'ALL', '', 'RJ second list in Metrix has no name: fill in']
+  ['NORMAL', 'Rajasthan', 'ALL', 'Shalini Kumari', 'RJ: one person for all sellers']
 ];
 
 var US_QC_HEADER = ['Processed At', 'Status', 'Reg No', 'Claim No', 'Seller', 'Mail Date', 'Subject', 'Mail Link', 'Message ID', 'Checks'];

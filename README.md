@@ -159,17 +159,16 @@ The *Metrix* tab is free-form, so the **CD Matrix** tab is my reading of it:
 - **Surveyor / PSU cases outside AP-TS, TN and KL** go by state using the *Name / State* list under
   "Surveyor And Psu Except AP TS and TN KL" (Shubham, Pappu, Anuradha, Manish, Kamaldeep). Anything left over
   goes to Bhuwan (East/North) or Ravi Shankar Tripathi (South/West).
-- **Karnataka:** the Metrix lists SBI General under **Rahul Kumar Rai**. Your message said Nilima for SBI in
-  Karnataka. If that's the current rule, edit the Karnataka rows.
-- **Rajasthan:** the second seller list (Godigit, Chola, SBI, TATA, Iffco, Liberty, Royal, Zuno, Edelweiss) has
-  no name in the Metrix, so the CD person is left blank and flagged. Fill in the name in the last CD Matrix row.
+- **Karnataka:** SBI General goes to Rahul Kumar Rai, as in the Metrix.
+- **Rajasthan:** one person (Shalini Kumari) handles all sellers.
 - **East region:** Chhattisgarh and the North-East states are in the East block (Pankaj / Rachna).
   "Pankaj" is mapped to **Pankaj Kumar** from the contact list.
 - **Delhi NCR:** Delhi, Gurgaon/Gurugram, Faridabad, Noida, Greater Noida and Ghaziabad.
 - **CV bucket:** Commercial Vehicle, Commercial Equipment and Farm Equipment. Yellow-plate cars use the
   regional rows. You can change this in `US_CV_TYPES` at the top of the script.
-- **Seller Rules → Email Domains:** these are the insurers' usual mail domains. If a seller isn't detected,
-  add its domain to the right row. Personal mail ids (gmail, yahoo…) count as *Surveyor Seller*.
+- **Seller Rules → Email Domains:** these are the insurers' usual mail domains. A mail from a domain that isn't
+  listed, sent from Gmail (or another personal mail id such as Yahoo), counts as *Surveyor Seller*. Any other
+  unknown domain is flagged so you can add it to the right row.
 - **Theft / Superdari:** Cardekho Region Id is set to 10 / 13 as in *Seller T & C*.
 
 ## Settings

@@ -112,6 +112,7 @@ test('detects the seller from the original sender, ignoring internal forwards', 
   assert.strictEqual(det.rule.id, '2342');
   assert.strictEqual(S.detectSeller_(['someone@hq.godigit.com'], L.rules).rule.key, 'GODIGIT');
   assert.strictEqual(S.detectSeller_(['surveyor.x@gmail.com'], L.rules).rule.key, 'SURVEYOR');
+  assert.strictEqual(S.detectSeller_(['qc_b2b@girnarsoft.com', 'Surveyor.X@GMAIL.COM'], L.rules).rule.id, '2356');
   assert.strictEqual(S.detectSeller_(['a@girnarsoft.com', 'b@unknown.in'], L.rules), null);
 });
 
@@ -155,6 +156,11 @@ test('CD matrix: luxury, CV, surveyor and region rows', () => {
   assert.strictEqual(S.pickCdPerson_(L.matrix, 'CV', regions('Mumbai', 'Maharashtra'), 'UNIVERSAL'), 'Ankit Kumar');
   assert.strictEqual(S.pickCdPerson_(L.matrix, 'LUXURY', regions('Chennai', 'Tamil Nadu'), 'HDFC'), 'G Dinesh');
   assert.strictEqual(S.pickCdPerson_(L.matrix, 'LUXURY', regions('Mumbai', 'Maharashtra'), 'HDFC'), 'Ata Ullah Shaikh');
+  L.states.push({ state: 'Rajasthan', city: 'Kota', zone: 'North' });
+  for (const seller of ['UNIVERSAL', 'GODIGIT', 'SBI', 'TATA', 'ZUNO']) {
+    assert.strictEqual(S.pickCdPerson_(L.matrix, 'NORMAL', regions('Kota', 'Rajasthan'), seller), 'Shalini Kumari');
+  }
+  assert.strictEqual(S.pickCdPerson_(L.matrix, 'NORMAL', regions('Kota', 'Rajasthan'), 'SURVEYOR'), 'Pappu Yadav');
   assert.strictEqual(S.findContact_(L.contacts, 'Rahul rai').phone, '7827970281');
 });
 
