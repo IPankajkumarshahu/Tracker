@@ -4,11 +4,13 @@ Exports every **starred** Gmail message to Excel with these columns:
 
 | Date | Time | Subject | Link | Reg No |
 |------|------|---------|------|--------|
-| 24-09-2026 | 13:30:00 | Claim for MH 12 AB 1234 | https://mail.google.com/mail/u/0/#all/... | MH12AB1234 |
+| 24-09-2026 | 13:30:00 | Claim for MH 12 AB 1234 | https://mail.google.com/mail/?authuser=you@example.com#all/... | MH12AB1234 |
 
 **Reg No** is the vehicle registration number found in the subject line, written without spaces
 (`MH 12 AB 1234`, `mh-12-ab-1234` → `MH12AB1234`). It is blank if the subject has none. If there are several, they are separated by commas.
 Supported formats: the standard state format (`MH12AB1234`, `DL3CAB1234`, `KA05MN123`) and the Bharat series (`22BH1234AA`).
+If the subject labels the number (`Regn. No. HR890648`), it is picked up even without series letters.
+Links use `?authuser=<your email>`, so they open the right account even when several are signed in.
 Only real RTO state codes are accepted, so ordinary words are not picked up by mistake.
 
 There are two ways to run it. Pick one.
@@ -44,8 +46,6 @@ python gmail_starred_export.py -o my_list.xlsx      # custom file name
 python gmail_starred_export.py --tz Asia/Kolkata    # time zone for Date/Time (default)
 ```
 The first run opens a browser for Google sign-in (read-only Gmail access). After that, the sign-in is saved in `token.json`.
-If you use several Google accounts in one browser and the links open the wrong one, pass `--account-index N`
-(the `N` in `mail.google.com/mail/u/N`).
 
 ### Tests
 ```bash

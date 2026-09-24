@@ -53,7 +53,7 @@ def gmail_service(credentials_file, token_file):
 
 
 def fetch_starred(service):
-    """Yield (message_id, internal_date_ms, subject) for every starred message."""
+    """Yield (message_id, thread_id, internal_date_ms, subject) for every starred message."""
     page_token = None
     while True:
         resp = (
@@ -71,18 +71,27 @@ def fetch_starred(service):
             )
             headers = msg.get("payload", {}).get("headers", [])
             subject = next((h["value"] for h in headers if h["name"].lower() == "subject"), "")
-            yield msg["id"], int(msg["internalDate"]), subject
+            yield msg["id"], msg["threadId"], int(msg["internalDate"]), subject
         page_token = resp.get("nextPageToken")
         if not page_token:
             break
 
 
-def build_rows(messages, tz, account_index=0):
+def mail_link(email, msg_id, thread_id):
+    """Same link format Gmail uses; ``authuser`` opens the right account even
+    when several are signed in."""
+    return (
+        f"https://mail.google.com/mail/?authuser={email}"
+        f"#all/thread-f:{int(thread_id, 16)}|msg-f:{int(msg_id, 16)}"
+    )
+
+
+def build_rows(messages, tz, email):
     rows = []
     # newest first
-    for msg_id, internal_ms, subject in sorted(messages, key=lambda m: m[1], reverse=True):
+    for msg_id, thread_id, internal_ms, subject in sorted(messages, key=lambda m: m[2], reverse=True):
         dt = datetime.fromtimestamp(internal_ms / 1000, tz=timezone.utc).astimezone(tz)
-        link = f"https://mail.google.com/mail/u/{account_index}/#all/{msg_id}"
+        link = mail_link(email, msg_id, thread_id)
         rows.append(
             [
                 dt.strftime("%d-%m-%Y"),
@@ -123,12 +132,11 @@ def main():
     p.add_argument("--tz", default="Asia/Kolkata", help="Timezone for Date/Time (default: Asia/Kolkata)")
     p.add_argument("--credentials", default="credentials.json")
     p.add_argument("--token", default="token.json")
-    p.add_argument("--account-index", type=int, default=0,
-                   help="N in mail.google.com/mail/u/N if you use several Google accounts in the browser")
     args = p.parse_args()
 
     service = gmail_service(args.credentials, args.token)
-    rows = build_rows(fetch_starred(service), ZoneInfo(args.tz), args.account_index)
+    email = service.users().getProfile(userId="me").execute()["emailAddress"]
+    rows = build_rows(fetch_starred(service), ZoneInfo(args.tz), email)
     write_excel(rows, args.output)
     with_reg = sum(1 for r in rows if r[4])
     print(f"Saved {len(rows)} starred mails to {args.output} ({with_reg} with a Reg No).")

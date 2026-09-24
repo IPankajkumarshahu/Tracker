@@ -23,6 +23,13 @@ _BHARAT = re.compile(
     rf"(?<![A-Z0-9])(\d{{2}}){_SEP}(BH){_SEP}(\d{{4}}){_SEP}([A-Z]{{1,2}})(?![A-Z0-9])"
 )
 
+# Labelled numbers ("Regn. No. HR890648", "Registration No: DL 1 1234") may
+# lack series letters; accept those only when the label is present.
+_LABELLED = re.compile(
+    rf"(?:REGN?|REGISTRATION|VEH(?:ICLE)?)\.?\s*(?:NO|NUMBER)\.?\s*[:#\-]?\s*"
+    rf"([A-Z]{{2}}){_SEP}(\d{{1,2}}){_SEP}()(\d{{1,4}})(?![A-Z0-9])"
+)
+
 
 def find_reg_numbers(text):
     """Return unique registration numbers found in ``text``, normalised to
@@ -36,12 +43,13 @@ def find_reg_numbers(text):
     for m in _BHARAT.finditer(upper):
         found.append((m.start(), "".join(m.groups())))  # already separator-free
 
-    for m in _STANDARD.finditer(upper):
-        state, district, series, number = m.groups()
+    standard = [(m.start(), m.groups()) for m in _STANDARD.finditer(upper)]
+    labelled = [(m.start(1), m.groups()) for m in _LABELLED.finditer(upper)]
+    for start, (state, district, series, number) in standard + labelled:
         if state not in STATE_CODES:
             continue
         series = re.sub(r"[^A-Z]", "", series)
-        found.append((m.start(), f"{state}{district.zfill(2)}{series}{number.zfill(4)}"))
+        found.append((start, f"{state}{district.zfill(2)}{series}{number.zfill(4)}"))
 
     result = []
     for _, reg in sorted(found):

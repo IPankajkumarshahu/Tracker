@@ -16,6 +16,9 @@ var STATE_CODES = ['AN', 'AP', 'AR', 'AS', 'BR', 'CG', 'CH', 'DD', 'DL', 'DN', '
 var SEP = '[\\s\\-./]*';
 var STANDARD_RE = new RegExp('(?<![A-Z0-9])([A-Z]{2})' + SEP + '(\\d{1,2})' + SEP +
   '([A-Z](?:' + SEP + '[A-Z]){0,2})' + SEP + '(\\d{1,4})(?![A-Z0-9])', 'g');
+// Labelled numbers ("Regn. No. HR890648") may lack series letters.
+var LABELLED_RE = new RegExp('(?:REGN?|REGISTRATION|VEH(?:ICLE)?)\\.?\\s*(?:NO|NUMBER)\\.?\\s*[:#\\-]?\\s*' +
+  '([A-Z]{2})' + SEP + '(\\d{1,2})' + SEP + '()(\\d{1,4})(?![A-Z0-9])', 'g');
 var BHARAT_RE = new RegExp('(?<![A-Z0-9])(\\d{2})' + SEP + '(BH)' + SEP + '(\\d{4})' + SEP +
   '([A-Z]{1,2})(?![A-Z0-9])', 'g');
 
@@ -35,12 +38,14 @@ function findRegNumbers(text) {
   while ((m = BHARAT_RE.exec(upper)) !== null) {
     found.push({ pos: m.index, reg: m[1] + m[2] + m[3] + m[4] });
   }
-  STANDARD_RE.lastIndex = 0;
-  while ((m = STANDARD_RE.exec(upper)) !== null) {
-    if (STATE_CODES.indexOf(m[1]) === -1) continue;
-    var series = m[3].replace(/[^A-Z]/g, '');
-    found.push({ pos: m.index, reg: m[1] + pad(m[2], 2) + series + pad(m[4], 4) });
-  }
+  [STANDARD_RE, LABELLED_RE].forEach(function (re) {
+    re.lastIndex = 0;
+    while ((m = re.exec(upper)) !== null) {
+      if (STATE_CODES.indexOf(m[1]) === -1) continue;
+      var series = m[3].replace(/[^A-Z]/g, '');
+      found.push({ pos: m.index, reg: m[1] + pad(m[2], 2) + series + pad(m[4], 4) });
+    }
+  });
 
   found.sort(function (a, b) { return a.pos - b.pos; });
   var result = [];
@@ -50,8 +55,15 @@ function findRegNumbers(text) {
   return result;
 }
 
+/** Same link format Gmail uses; authuser opens the right signed-in account. */
+function mailLink(email, msgId, threadId) {
+  return 'https://mail.google.com/mail/?authuser=' + email +
+    '#all/thread-f:' + BigInt('0x' + threadId).toString() + '|msg-f:' + BigInt('0x' + msgId).toString();
+}
+
 function exportStarredMails() {
   var tz = Session.getScriptTimeZone();
+  var email = Session.getEffectiveUser().getEmail();
   var rows = [];
   var start = 0;
   var batch;
@@ -68,7 +80,7 @@ function exportStarredMails() {
           Utilities.formatDate(date, tz, 'dd-MM-yyyy'),
           Utilities.formatDate(date, tz, 'HH:mm:ss'),
           subject,
-          'https://mail.google.com/mail/u/0/#all/' + msg.getId(),
+          mailLink(email, msg.getId(), thread.getId()),
           findRegNumbers(subject).join(', ')
         ]);
       });
